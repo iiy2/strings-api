@@ -1,8 +1,30 @@
-from flask import Flask, jsonify, make_response
+from flask import Flask, jsonify, make_response, Response, request
 from urllib.parse import quote
+from functools import wraps
 import requests, json, operator
 
 app = Flask(__name__)
+
+
+def check_auth(username, password):
+    return username == 'admin' and password == 'secret'
+
+
+def authenticate():
+    return Response(
+        'Please login to use API', 401,
+        {'WWW-Authenticate': 'Basic realm="Login Required"'})
+
+
+def requires_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if not auth or not check_auth(auth.username, auth.password):
+            return authenticate()
+        return f(*args, **kwargs)
+
+    return decorated
 
 
 @app.route('/')
@@ -16,6 +38,7 @@ def index():
 
 
 @app.route('/get')
+@requires_auth
 def get():
     url = 'http://setgetgo.com/randomword/get.php'
     response = requests.get(url)
@@ -32,6 +55,7 @@ def get():
 
 
 @app.route('/wiki/<string:word>')
+@requires_auth
 def wiki(word):
     url = 'https://en.wikipedia.org/w/api.php?format=json&action=parse&prop=text&page=' + quote(word)
     response = requests.get(url)
@@ -69,6 +93,7 @@ def wiki(word):
 
 @app.route('/popular/', defaults={'n': -1})
 @app.route('/popular/<int:n>')
+@requires_auth
 def popular(n):
     errors = []
     result = ''
@@ -95,6 +120,7 @@ def popular(n):
 @app.route('/jokes/', defaults={'firstname': 'Chuck', 'lastname': 'Norris'})
 @app.route('/jokes/<string:firstname>/', defaults={'lastname': ''})
 @app.route('/jokes/<string:firstname>/<string:lastname>')
+@requires_auth
 def joke(firstname, lastname):
     errors = []
     result = ''
