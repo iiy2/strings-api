@@ -17,13 +17,13 @@ def index():
 @app.route('/get')
 def get():
     url = 'http://setgetgo.com/randomword/get.php'
-    word = requests.get(url)
+    response = requests.get(url)
     errors = []
-    if word.status_code == 404:
+    if response.status_code == 404:
         errors.append({'message': 'External API not found'})
         result = ''
     else:
-        result = word.text
+        result = response.text
     return jsonify({
         'result': result,
         'errors': errors
@@ -33,13 +33,13 @@ def get():
 @app.route('/wiki/<string:word>')
 def wiki(word):
     url = 'https://en.wikipedia.org/w/api.php?format=json&action=parse&prop=text&page=' + word
-    page = requests.get(url)
+    response = requests.get(url)
     errors = []
     result = ''
-    print(page.status_code)
-    if page.status_code == 404:
-        abort(404)
-    if 'parse' in page.json():
+    if response.status_code == 404:
+        errors.append({'message': 'External API not found'})
+        result = ''
+    if 'parse' in response.json():
         try:
             f = open('words.txt', 'r')
         except FileNotFoundError as err:
@@ -54,14 +54,11 @@ def wiki(word):
                 words_stat[word] += 1
             else:
                 words_stat[word] = 1
-            print(words_stat)
             with open('words.txt', 'w') as f:
                 json.dump(words_stat, f)
-            if 'parse' in page.json():
-                result = page.json()['parse']['text']
-            f.close()
+            result = response.json()['parse']['text']
     else:
-        errors.append(page.json()['error']['info'])
+        errors.append(response.json()['error']['info'])
     return jsonify({
         'result': result,
         'errors': errors
@@ -87,6 +84,7 @@ def popular(n):
         if n == -1:
             n = len(words_sorted)
         result = [dict([i]) for i in words_sorted[0:n]]
+        f.close()
     return jsonify({
         'result': result,
         'errors': errors
@@ -97,16 +95,23 @@ def popular(n):
 @app.route('/jokes/<string:firstname>/', defaults={'lastname': ''})
 @app.route('/jokes/<string:firstname>/<string:lastname>')
 def joke(firstname, lastname):
+    errors = []
+    result = ''
     url = 'http://api.icndb.com/jokes/random?firstName=' + firstname + '&lastName=' + lastname
-    word = requests.get(url)
-    if word.status_code == 404:
-        abort(404)
+    response = requests.get(url)
+    if response.status_code == 404:
+        errors.append({'message': 'External API not found'})
+    else:
+        result = response.json()['value']['joke']
     return jsonify({
-        'result': word.json()['value']['joke'],
-        'errors': []
+        'result': result,
+        'errors': errors
     })
 
 
 @app.errorhandler(404)
 def not_found(error):
-    return make_response(jsonify({'errors': [{'message': 'Api not found'}], 'result': ''}), 404)
+    return make_response(jsonify({
+        'errors': [{'message': 'Api not found'}],
+        'result': ''
+    }), 404)
