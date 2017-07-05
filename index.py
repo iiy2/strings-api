@@ -1,4 +1,5 @@
-from flask import Flask, jsonify, abort, make_response
+from flask import Flask, jsonify, make_response
+from urllib.parse import quote
 import requests, json, operator
 
 app = Flask(__name__)
@@ -32,7 +33,7 @@ def get():
 
 @app.route('/wiki/<string:word>')
 def wiki(word):
-    url = 'https://en.wikipedia.org/w/api.php?format=json&action=parse&prop=text&page=' + word
+    url = 'https://en.wikipedia.org/w/api.php?format=json&action=parse&prop=text&page=' + quote(word)
     response = requests.get(url)
     errors = []
     result = ''
@@ -41,11 +42,11 @@ def wiki(word):
         result = ''
     if 'parse' in response.json():
         try:
-            f = open('words.txt', 'r')
+            with open('words.txt', 'r') as f:
+                read_content = f.read()
         except FileNotFoundError as err:
             errors.append({'message': 'File not found'})
         else:
-            read_content = f.read()
             if len(read_content) > 0:
                 words_stat = json.loads(read_content)
             else:
@@ -71,11 +72,11 @@ def popular(n):
     errors = []
     result = ''
     try:
-        f = open('words.txt', 'r')
+        with open('words.txt', 'r') as f:
+            read_content = f.read()
     except FileNotFoundError as err:
         errors.append({'message': 'File not found'})
     else:
-        read_content = f.read()
         if len(read_content) > 0:
             words_stat = json.loads(read_content)
         else:
@@ -83,8 +84,7 @@ def popular(n):
         words_sorted = sorted(words_stat.items(), key=operator.itemgetter(1), reverse=True)
         if n == -1:
             n = len(words_sorted)
-        result = [dict([i]) for i in words_sorted[0:n]]
-        f.close()
+        result = [dict([i]) for i in words_sorted[:n]]
     return jsonify({
         'result': result,
         'errors': errors
@@ -97,7 +97,7 @@ def popular(n):
 def joke(firstname, lastname):
     errors = []
     result = ''
-    url = 'http://api.icndb.com/jokes/random?firstName=' + firstname + '&lastName=' + lastname
+    url = 'http://api.icndb.com/jokes/random?firstName=' + quote(firstname) + '&lastName=' + quote(lastname)
     response = requests.get(url)
     if response.status_code == 404:
         errors.append({'message': 'External API not found'})
