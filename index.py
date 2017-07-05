@@ -20,15 +20,15 @@ def get():
     url = 'http://setgetgo.com/randomword/get.php'
     response = requests.get(url)
     errors = []
-    if response.status_code == 404:
-        errors.append({'message': 'External API not found'})
-        result = ''
-    else:
+    if response.status_code == 200:
         result = response.text
-    return jsonify({
+    else:
+        result = ''
+        errors.append({'message': 'External API not found'})
+    return make_response(jsonify({
         'result': result,
         'errors': errors
-    })
+    }), response.status_code)
 
 
 @app.route('/wiki/<string:word>')
@@ -37,33 +37,34 @@ def wiki(word):
     response = requests.get(url)
     errors = []
     result = ''
-    if response.status_code == 404:
+    if response.status_code == 200:
+        if 'parse' in response.json():
+            try:
+                with open('words.txt', 'r') as f:
+                    read_content = f.read()
+            except FileNotFoundError as err:
+                errors.append({'message': 'File not found'})
+            else:
+                if len(read_content) > 0:
+                    words_stat = json.loads(read_content)
+                else:
+                    words_stat = dict()
+                if word in words_stat:
+                    words_stat[word] += 1
+                else:
+                    words_stat[word] = 1
+                with open('words.txt', 'w') as f:
+                    json.dump(words_stat, f)
+                result = response.json()['parse']['text']
+        else:
+            errors.append(response.json()['error']['info'])
+    else:
         errors.append({'message': 'External API not found'})
         result = ''
-    if 'parse' in response.json():
-        try:
-            with open('words.txt', 'r') as f:
-                read_content = f.read()
-        except FileNotFoundError as err:
-            errors.append({'message': 'File not found'})
-        else:
-            if len(read_content) > 0:
-                words_stat = json.loads(read_content)
-            else:
-                words_stat = dict()
-            if word in words_stat:
-                words_stat[word] += 1
-            else:
-                words_stat[word] = 1
-            with open('words.txt', 'w') as f:
-                json.dump(words_stat, f)
-            result = response.json()['parse']['text']
-    else:
-        errors.append(response.json()['error']['info'])
-    return jsonify({
+    return make_response(jsonify({
         'result': result,
         'errors': errors
-    })
+    }), response.status_code)
 
 
 @app.route('/popular/', defaults={'n': -1})
@@ -85,10 +86,10 @@ def popular(n):
         if n == -1:
             n = len(words_sorted)
         result = [dict([i]) for i in words_sorted[:n]]
-    return jsonify({
+    return make_response(jsonify({
         'result': result,
         'errors': errors
-    })
+    }), 200)
 
 
 @app.route('/jokes/', defaults={'firstname': 'Chuck', 'lastname': 'Norris'})
@@ -103,10 +104,10 @@ def joke(firstname, lastname):
         errors.append({'message': 'External API not found'})
     else:
         result = response.json()['value']['joke']
-    return jsonify({
+    return make_response(jsonify({
         'result': result,
         'errors': errors
-    })
+    }), response.status_code)
 
 
 @app.errorhandler(404)
