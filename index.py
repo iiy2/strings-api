@@ -1,9 +1,11 @@
-from flask import Flask, jsonify, make_response, Response, request
+from flask import Flask, jsonify, make_response, Response, request, session
 from urllib.parse import quote
 from functools import wraps
 import requests, json, operator
 
 app = Flask(__name__)
+
+app.avoid_login = False
 
 
 def check_auth(username, password):
@@ -19,6 +21,8 @@ def authenticate():
 def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        if app.avoid_login:
+            return f(*args, **kwargs)
         auth = request.authorization
         if not auth or not check_auth(auth.username, auth.password):
             return authenticate()
@@ -81,7 +85,7 @@ def wiki(word):
                     json.dump(words_stat, f)
                 result = response.json()['parse']['text']
         else:
-            errors.append(response.json()['error']['info'])
+            errors.append({'message': response.json()['error']['info']})
     else:
         errors.append({'message': 'External API not found'})
         result = ''
