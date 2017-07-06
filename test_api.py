@@ -25,123 +25,123 @@ class IndexTestCase(unittest.TestCase):
 
     def test_wrong_url(self):
         response = self.app.get('/wrong_url')
-        assert response.status_code == 404
+        self.assertEqual(response.status_code, 404)
 
     def test_root(self):
         rv = self.app.get('/')
-        assert len(rv.data) > 0
-        assert rv.status_code == 200
+        self.assertGreater(len(rv.data), 0)
+        self.assertEqual(rv.status_code, 200)
 
     def test_get_random_word(self):
         response = self.app.get('/get')
         decoded_data_str = response.data.decode()
         decoded_data = json.loads(decoded_data_str)
-        assert 'errors' in decoded_data
-        assert len(decoded_data['errors']) == 0
-        assert 'result' in decoded_data
-        assert len(decoded_data['result']) > 0
-        assert response.status_code == 200
+        self.assertIn('errors', decoded_data)
+        self.assertEqual(len(decoded_data['errors']), 0)
+        self.assertIn('result', decoded_data)
+        self.assertGreater(len(decoded_data['result']), 0)
+        self.assertEqual(response.status_code, 200)
 
     def test_get_wiki_page(self):
         response = self.app.get('/wiki')
-        assert response.status_code == 404  # no word was provided
+        self.assertEqual(response.status_code, 404)
         response = self.app.get('/wiki/python')
-        assert response.status_code == 200
+        self.assertEqual(response.status_code, 200)
         decoded_data_str = response.data.decode()
         decoded_data = json.loads(decoded_data_str)
-        assert 'errors' in decoded_data
-        assert len(decoded_data['errors']) == 0
-        assert 'result' in decoded_data
-        assert len(decoded_data['result']) > 0
+        self.assertIn('errors', decoded_data)
+        self.assertEqual(len(decoded_data['errors']), 0)
+        self.assertIn('result', decoded_data)
+        self.assertGreater(len(decoded_data['result']), 0)
         response = self.app.get('/wiki/blablablabla')
-        assert response.status_code == 200
+        self.assertEqual(response.status_code, 200)
         decoded_data_str = response.data.decode()
         decoded_data = json.loads(decoded_data_str)
-        assert 'errors' in decoded_data
-        assert len(decoded_data['errors']) == 1
-        assert decoded_data['errors'][0]['message'] == 'The page you specified doesn\'t exist.'
-        assert 'result' in decoded_data
-        assert len(decoded_data['result']) == 0
+        self.assertIn('errors', decoded_data)
+        self.assertEqual(len(decoded_data['errors']), 1)
+        self.assertEqual(decoded_data['errors'][0]['message'], 'The page you specified doesn\'t exist.')
+        self.assertIn('result', decoded_data)
+        self.assertEqual(len(decoded_data['result']), 0)
 
     def test_get_popular_words(self):
         response = self.app.get('/popular/some_word')
-        assert response.status_code == 404
+        self.assertEqual(response.status_code, 404)
         response = self.app.get('/popular/')
-        assert response.status_code == 200
+        self.assertEqual(response.status_code, 200)
         decoded_data_str = response.data.decode()
         decoded_data = json.loads(decoded_data_str)
-        assert 'errors' in decoded_data
-        assert len(decoded_data['errors']) == 0
-        assert 'result' in decoded_data
-        assert len(decoded_data['result']) == 5
-        assert decoded_data['result'] == [
+        self.assertIn('errors', decoded_data)
+        self.assertEqual(len(decoded_data['errors']), 0)
+        self.assertIn('result', decoded_data)
+        self.assertEqual(len(decoded_data['result']), 5)
+        self.assertEqual(decoded_data['result'], [
             {"test_word5": 34},
             {"test_word1": 2},
             {"test_word2": 1},
             {"test_word3": 1},
             {"test_word4": 1}
-        ]
+        ])
         response = self.app.get('/popular/4')
-        assert response.status_code == 200
+        self.assertEqual(response.status_code, 200)
         decoded_data_str = response.data.decode()
         decoded_data = json.loads(decoded_data_str)
-        assert 'errors' in decoded_data
-        assert len(decoded_data['errors']) == 0
-        assert 'result' in decoded_data
-        assert len(decoded_data['result']) == 4
-        assert decoded_data['result'] == [
+        self.assertIn('errors', decoded_data)
+        self.assertEqual(len(decoded_data['errors']), 0)
+        self.assertIn('result', decoded_data)
+        self.assertEqual(len(decoded_data['result']), 4)
+        self.assertEqual(decoded_data['result'], [
             {"test_word5": 34},
             {"test_word1": 2},
             {"test_word2": 1},
             {"test_word3": 1}
-        ]
+        ])
 
     def test_get_jokes(self):
         response = self.app.get('/jokes/')
-        assert response.status_code == 200
+        self.assertEqual(response.status_code, 200)
         decoded_data_str = response.data.decode()
         decoded_data = json.loads(decoded_data_str)
-        assert 'errors' in decoded_data
-        assert len(decoded_data['errors']) == 0
-        assert 'result' in decoded_data
-        assert len(decoded_data['result']) > 0
-        assert 'Chuck Norris' in decoded_data['result']
+        self.assertIn('errors', decoded_data)
+        self.assertEqual(len(decoded_data['errors']), 0)
+        self.assertIn('result', decoded_data)
+        self.assertGreater(len(decoded_data['result']), 0)
+        self.assertIn('Chuck Norris', decoded_data['result'])
         response = self.app.get('/jokes/test_name/')
-        assert response.status_code == 200
+        self.assertEqual(response.status_code, 200)
         decoded_data_str = response.data.decode()
         decoded_data = json.loads(decoded_data_str)
-        assert 'errors' in decoded_data
-        assert len(decoded_data['errors']) == 0
-        assert 'result' in decoded_data
-        assert len(decoded_data['result']) > 0
-        assert 'test_name' in decoded_data['result']
+        self.assertIn('errors', decoded_data)
+        self.assertEqual(len(decoded_data['errors']), 0)
+        self.assertIn('result', decoded_data)
+        self.assertGreater(len(decoded_data['result']), 0)
+        self.assertIn('test_name', decoded_data['result'])
         response = self.app.get('/jokes/test_name/test_lastname')
-        assert response.status_code == 200
+        self.assertEqual(response.status_code, 200)
         decoded_data_str = response.data.decode()
         decoded_data = json.loads(decoded_data_str)
-        assert 'errors' in decoded_data
-        assert len(decoded_data['errors']) == 0
-        assert 'result' in decoded_data
-        assert len(decoded_data['result']) > 0
-        assert 'test_name test_lastname' in decoded_data['result']
+        self.assertIn('errors', decoded_data)
+        self.assertEqual(len(decoded_data['errors']), 0)
+        self.assertIn('result', decoded_data)
+        self.assertGreater(len(decoded_data['result']), 0)
+        self.assertIn('test_name test_lastname', decoded_data['result'])
         response = self.app.get('/jokes/test name/')
-        assert response.status_code == 200
+        self.assertEqual(response.status_code, 200)
         decoded_data_str = response.data.decode()
         decoded_data = json.loads(decoded_data_str)
-        assert 'errors' in decoded_data
-        assert len(decoded_data['errors']) == 0
-        assert 'result' in decoded_data
-        assert len(decoded_data['result']) > 0
-        assert 'test name' in decoded_data['result']
+        self.assertIn('errors', decoded_data)
+        self.assertEqual(len(decoded_data['errors']), 0)
+        self.assertIn('result', decoded_data)
+        self.assertGreater(len(decoded_data['result']), 0)
+        self.assertIn('test name', decoded_data['result'])
         response = self.app.get('/jokes/test name/test lastnam,:\'e')
-        assert response.status_code == 200
+        self.assertEqual(response.status_code, 200)
         decoded_data_str = response.data.decode()
         decoded_data = json.loads(decoded_data_str)
-        assert 'errors' in decoded_data
-        assert len(decoded_data['errors']) == 0
-        assert 'result' in decoded_data
-        assert len(decoded_data['result']) > 0
-        assert 'test name test lastnam,:\'e' in decoded_data['result']
+        self.assertIn('errors', decoded_data)
+        self.assertEqual(len(decoded_data['errors']), 0)
+        self.assertIn('result', decoded_data)
+        self.assertGreater(len(decoded_data['result']), 0)
+        self.assertIn('test name test lastnam,:\'e', decoded_data['result'])
 
 
 if __name__ == '__main__':
